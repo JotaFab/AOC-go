@@ -92,3 +92,72 @@ func SolveDay8(points []Point) int {
 
 	return sizes[0] * sizes[1] * sizes[2]
 }
+
+
+func SolveDay8Part2(points []Point) int {
+	n := len(points)
+	if n < 2 {
+		return 0
+	}
+
+	type edge struct {
+		a, b int
+		dist int
+	}
+
+	edges := make([]edge, 0, n*(n-1)/2)
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n; j++ {
+			dx := points[i].X - points[j].X
+			dy := points[i].Y - points[j].Y
+			dz := points[i].Z - points[j].Z
+			dist := dx*dx + dy*dy + dz*dz
+
+			edges = append(edges, edge{i, j, dist})
+		}
+	}
+
+	sort.Slice(edges, func(i, j int) bool {
+		return edges[i].dist < edges[j].dist
+	})
+
+	parent := make([]int, n)
+	size := make([]int, n)
+	for i := 0; i < n; i++ {
+		parent[i] = i
+		size[i] = 1
+	}
+
+	var find func(int) int
+	find = func(x int) int {
+		if parent[x] != x {
+			parent[x] = find(parent[x])
+		}
+		return parent[x]
+	}
+
+	components := n
+
+	for _, e := range edges {
+		ra := find(e.a)
+		rb := find(e.b)
+		if ra == rb {
+			continue
+		}
+
+		// union
+		if size[ra] < size[rb] {
+			ra, rb = rb, ra
+		}
+		parent[rb] = ra
+		size[ra] += size[rb]
+		components--
+
+		// this edge made the graph fully connected
+		if components == 1 {
+			return points[e.a].X * points[e.b].X
+		}
+	}
+
+	return 0
+}
